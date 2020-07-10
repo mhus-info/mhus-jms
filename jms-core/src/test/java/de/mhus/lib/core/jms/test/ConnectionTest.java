@@ -23,8 +23,9 @@ import org.junit.jupiter.api.Test;
 import de.mhus.lib.core.MApi;
 import de.mhus.lib.core.logging.Log.LEVEL;
 import de.mhus.lib.jms.JmsConnection;
+import de.mhus.lib.tests.TestCase;
 
-public class ConnectionTest {
+public class ConnectionTest extends TestCase {
 
     @Test
     public void testLifecycle() throws JMSException {

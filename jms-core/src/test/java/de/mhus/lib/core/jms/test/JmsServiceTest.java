@@ -36,8 +36,9 @@ import de.mhus.lib.jms.ClientObjectProxy;
 import de.mhus.lib.jms.JmsConnection;
 import de.mhus.lib.jms.ServerObjectProxy;
 import de.mhus.lib.jms.WebServiceDescriptor;
+import de.mhus.lib.tests.TestCase;
 
-public class JmsServiceTest {
+public class JmsServiceTest extends TestCase {
 
     @Test() // timeout=120000
     public void testCommunication() throws JMSException {

@@ -28,8 +28,9 @@ import de.mhus.lib.core.util.Value;
 import de.mhus.lib.jms.ClientJms;
 import de.mhus.lib.jms.JmsConnection;
 import de.mhus.lib.jms.ServerJms;
+import de.mhus.lib.tests.TestCase;
 
-public class JmsTest {
+public class JmsTest extends TestCase {
 
     @Test
     public void testCommunication() throws JMSException {
