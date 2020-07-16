@@ -65,7 +65,7 @@
     <dependencies>
         <dependency>
             <groupId>de.mhus.lib</groupId>
-            <artifactId>lib-tests</artifactId>
+            <artifactId>lib-junit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
