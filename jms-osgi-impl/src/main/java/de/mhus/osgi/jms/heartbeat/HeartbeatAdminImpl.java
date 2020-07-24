@@ -29,11 +29,11 @@ import de.mhus.lib.core.MTimerTask;
 import de.mhus.lib.core.service.TimerFactory;
 import de.mhus.lib.core.service.TimerIfc;
 import de.mhus.osgi.api.MOsgi.Service;
+import de.mhus.osgi.api.jms.HeartbeatAdmin;
+import de.mhus.osgi.api.jms.HeartbeatServiceIfc;
 import de.mhus.osgi.api.jms.JmsDataSource;
 import de.mhus.osgi.api.jms.JmsManagerService;
 import de.mhus.osgi.api.jms.JmsUtil;
-import de.mhus.osgi.api.services.HeartbeatAdmin;
-import de.mhus.osgi.api.services.HeartbeatServiceIfc;
 
 @Component(
         service = HeartbeatAdmin.class,
