@@ -11,7 +11,7 @@
  * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.mhus.osgi.jms.services;
+package de.mhus.osgi.api.jms;
 
 import javax.jms.JMSException;
 
@@ -19,9 +19,6 @@ import de.mhus.lib.core.M;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.jms.JmsChannel;
 import de.mhus.lib.jms.JmsConnection;
-import de.mhus.osgi.api.jms.JmsDataChannel;
-import de.mhus.osgi.api.jms.JmsManagerService;
-import de.mhus.osgi.api.jms.JmsUtil;
 
 public abstract class AbstractJmsDataChannel extends MLog implements JmsDataChannel {
 
@@ -31,6 +28,9 @@ public abstract class AbstractJmsDataChannel extends MLog implements JmsDataChan
 
     public AbstractJmsDataChannel() {
         name = getClass().getSimpleName();
+        JmsDataConnection anno = this.getClass().getAnnotation(JmsDataConnection.class);
+        if (anno != null)
+            connectionName = anno.value();
     }
 
     @Override

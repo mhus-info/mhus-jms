@@ -74,8 +74,8 @@
 			<artifactId>lib-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>de.mhus.lib</groupId>
-			<artifactId>lib-jms</artifactId>
+			<groupId>de.mhus.jms</groupId>
+			<artifactId>jms-core</artifactId>
 		</dependency>
         <dependency>
             <groupId>de.mhus.osgi</groupId>

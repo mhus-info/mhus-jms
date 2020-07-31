@@ -17,9 +17,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.jws.Oneway;
-import javax.jws.WebMethod;
 import javax.jws.WebService;
 
+import de.mhus.lib.annotations.generic.Public;
 import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.pojo.ActionsOnlyStrategy;
@@ -27,26 +27,26 @@ import de.mhus.lib.core.pojo.PojoAction;
 import de.mhus.lib.core.pojo.PojoModel;
 import de.mhus.lib.core.pojo.PojoParser;
 
-public class WebServiceDescriptor extends ServiceDescriptor {
+public class PojoServiceDescriptor extends ServiceDescriptor {
 
     private Object service;
     private PojoModel model;
 
-    public WebServiceDescriptor(Object service) {
+    public PojoServiceDescriptor(Object service) {
         this(findIfc(service), service);
     }
     
-    public WebServiceDescriptor(Class<?> ifc, Object service) {
+    public PojoServiceDescriptor(Class<?> ifc, Object service) {
         super(ifc);
         this.service = service;
         model =
                 new PojoParser()
-                        .parse(service, new ActionsOnlyStrategy(true, WebMethod.class))
+                        .parse(service, new ActionsOnlyStrategy(true, Public.class))
                         .getModel();
 
         for (String name : model.getActionNames()) {
             PojoAction act = model.getAction(name);
-            functions.put(name, new WebServiceFunction(act));
+            functions.put(name, new PojoServiceFunction(act));
         }
     }
 
@@ -65,14 +65,14 @@ public class WebServiceDescriptor extends ServiceDescriptor {
         return c;
     }
 
-    private class WebServiceFunction extends FunctionDescriptor {
+    private class PojoServiceFunction extends FunctionDescriptor {
 
         private PojoAction act;
 
-        public WebServiceFunction(PojoAction act) {
+        public PojoServiceFunction(PojoAction act) {
             this.act = act;
             //			oneWay = act.getAnnotation(Oneway.class) != null || act.getReturnType() == null;
-            oneWay = act.getAnnotation(Oneway.class) != null;
+            oneWay = !((Public)act.getAnnotation(Public.class)).readable();
             returnType = act.getReturnType();
             if (returnType == null) returnType = Void.class;
         }

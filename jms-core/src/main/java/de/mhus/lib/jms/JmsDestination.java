@@ -26,6 +26,10 @@ public class JmsDestination extends JmsObject {
     private boolean destinationTopic;
     private Destination jmsDestination;
 
+    public JmsDestination(String destination) {
+        this(destination, false);
+    }
+    
     public JmsDestination(String destination, boolean destinationTopic) {
         this.destination = destination;
         this.destinationTopic = destinationTopic;

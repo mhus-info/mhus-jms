@@ -11,31 +11,21 @@
  * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.mhus.lib.jms;
+package de.mhus.osgi.api.jms;
 
-import java.util.HashMap;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-import de.mhus.lib.core.MLog;
+/**
+ * Mark a method to be used as rest action use the following method pattern
+ *
+ * <p>public void onAction(JsonResult result, CallContext callContext) throws Exception
+ *
+ * @author mikehummel
+ */
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JmsDataConnection {
 
-// use PojoServiceDescriptor for server side
-public class ServiceDescriptor extends MLog {
+    String value();
 
-    protected HashMap<String, FunctionDescriptor> functions = new HashMap<>();
-    protected Class<?> ifc;
-
-    public ServiceDescriptor(Class<?> ifc) {
-        this.ifc = ifc;
-    }
-
-    public FunctionDescriptor getFunction(String name) {
-        return functions.get(name);
-    }
-
-    public Class<?> getInterface() {
-        return ifc;
-    }
-
-    public Object getObject() {
-        return null;
-    }
 }

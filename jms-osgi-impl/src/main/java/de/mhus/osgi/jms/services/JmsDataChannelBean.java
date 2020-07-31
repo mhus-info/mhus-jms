@@ -17,6 +17,7 @@ import javax.jms.JMSException;
 
 import de.mhus.lib.jms.JmsChannel;
 import de.mhus.lib.jms.JmsDestination;
+import de.mhus.osgi.api.jms.AbstractJmsDataChannel;
 
 public class JmsDataChannelBean extends AbstractJmsDataChannel {
 

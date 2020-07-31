@@ -17,8 +17,8 @@ import javax.jms.JMSException;
 
 import de.mhus.lib.jms.JmsChannel;
 import de.mhus.lib.jms.heartbeat.Heartbeat;
+import de.mhus.osgi.api.jms.AbstractJmsDataChannel;
 import de.mhus.osgi.api.jms.HeartbeatServiceIfc;
-import de.mhus.osgi.jms.services.AbstractJmsDataChannel;
 
 public class HeartbeatService extends AbstractJmsDataChannel implements HeartbeatServiceIfc {
 
