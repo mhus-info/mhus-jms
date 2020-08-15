@@ -17,8 +17,8 @@ import java.util.HashMap;
 
 import de.mhus.lib.core.MLog;
 
-// use PojoServiceDescriptor for server side
-public class ServiceDescriptor extends MLog {
+// use PojoServiceDescriptor for normal use
+public abstract class ServiceDescriptor extends MLog {
 
     protected HashMap<String, FunctionDescriptor> functions = new HashMap<>();
     protected Class<?> ifc;
