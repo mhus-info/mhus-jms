@@ -35,7 +35,7 @@ public class WebServiceDescriptor extends ServiceDescriptor {
     public WebServiceDescriptor(Object service) {
         this(findIfc(service), service);
     }
-    
+
     public WebServiceDescriptor(Class<?> ifc, Object service) {
         super(ifc);
         this.service = service;

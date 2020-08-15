@@ -48,9 +48,10 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
             new CfgLong(ServerJms.class, "maxThreadCountTimeout", 10000);
     private static CfgLong inactivityTimeout =
             new CfgLong(ServerJms.class, "inactivityTimeout", MPeriod.HOUR_IN_MILLISECOUNDS);
-    
-    private static CfgString CFG_TRACE_ACTIVE = new CfgString(ServerJms.class, "traceActivation", "");
-    
+
+    private static CfgString CFG_TRACE_ACTIVE =
+            new CfgString(ServerJms.class, "traceActivation", "");
+
     public ServerJms(JmsDestination dest) {
         super(dest);
     }
@@ -240,65 +241,77 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         try {
             if (message != null) {
                 try {
-                    SpanContext parentSpanCtx = ITracer.get().tracer().extract(Format.Builtin.TEXT_MAP, new TextMap() {
+                    SpanContext parentSpanCtx =
+                            ITracer.get()
+                                    .tracer()
+                                    .extract(
+                                            Format.Builtin.TEXT_MAP,
+                                            new TextMap() {
 
-						@Override
-						public Iterator<Entry<String, String>> iterator() {
-							try {
-								@SuppressWarnings("unchecked")
-								final Enumeration<String> enu = message.getPropertyNames();
-								return new Iterator<Entry<String,String>>() {
-									@Override
-									public boolean hasNext() {
-										return enu.hasMoreElements();
-									}
-	
-									@Override
-									public Entry<String, String> next() {
-										final String key = enu.nextElement();
-										return new Entry<String, String>() {
-	
-											@Override
-											public String getKey() {
-												return key;
-											}
-	
-											@Override
-											public String getValue() {
-												try {
-													return message.getStringProperty(key);
-												} catch (JMSException e) {
-													throw new MRuntimeException(key,e);
-												}
-											}
-	
-											@Override
-											public String setValue(String value) {
-												return null;
-											}
-											
-										};
-									}
-								};
-							} catch (JMSException e) {
-								throw new MRuntimeException(e);
-							}
-						}
+                                                @Override
+                                                public Iterator<Entry<String, String>> iterator() {
+                                                    try {
+                                                        @SuppressWarnings("unchecked")
+                                                        final Enumeration<String> enu =
+                                                                message.getPropertyNames();
+                                                        return new Iterator<
+                                                                Entry<String, String>>() {
+                                                            @Override
+                                                            public boolean hasNext() {
+                                                                return enu.hasMoreElements();
+                                                            }
 
-						@Override
-						public void put(String key, String value) {
-							
-						}
-                    	
-                    });
-                    
+                                                            @Override
+                                                            public Entry<String, String> next() {
+                                                                final String key =
+                                                                        enu.nextElement();
+                                                                return new Entry<String, String>() {
+
+                                                                    @Override
+                                                                    public String getKey() {
+                                                                        return key;
+                                                                    }
+
+                                                                    @Override
+                                                                    public String getValue() {
+                                                                        try {
+                                                                            return message
+                                                                                    .getStringProperty(
+                                                                                            key);
+                                                                        } catch (JMSException e) {
+                                                                            throw new MRuntimeException(
+                                                                                    key, e);
+                                                                        }
+                                                                    }
+
+                                                                    @Override
+                                                                    public String setValue(
+                                                                            String value) {
+                                                                        return null;
+                                                                    }
+                                                                };
+                                                            }
+                                                        };
+                                                    } catch (JMSException e) {
+                                                        throw new MRuntimeException(e);
+                                                    }
+                                                }
+
+                                                @Override
+                                                public void put(String key, String value) {}
+                                            });
+
                     if (parentSpanCtx == null) {
-                    	scope = ITracer.get().start(getName(), CFG_TRACE_ACTIVE.value());
-                    } else
-                    if (parentSpanCtx != null) {
-                    	scope = ITracer.get().tracer().buildSpan(getName()).asChildOf(parentSpanCtx).startActive(true);
+                        scope = ITracer.get().start(getName(), CFG_TRACE_ACTIVE.value());
+                    } else if (parentSpanCtx != null) {
+                        scope =
+                                ITracer.get()
+                                        .tracer()
+                                        .buildSpan(getName())
+                                        .asChildOf(parentSpanCtx)
+                                        .startActive(true);
                     }
-                    
+
                     if (scope != null) {
                         Tags.SPAN_KIND.set(scope.span(), Tags.SPAN_KIND_SERVER);
                     }
@@ -364,7 +377,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
 
         } finally {
             if (scope != null) {
-            	scope.close();
+                scope.close();
             }
         }
     }

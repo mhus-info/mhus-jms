@@ -17,24 +17,28 @@ public interface JmsInterceptor {
 
     /**
      * Begin processing of a incoming JMS RPC
+     *
      * @param context
      */
     void begin(JmsContext context);
 
     /**
      * End of processing incoming JMS RPC
+     *
      * @param context
      */
     void end(JmsContext context);
 
     /**
      * Prepare a message JMS RPC call
+     *
      * @param context
      */
     void prepare(JmsContext context);
 
     /**
      * Check incoming answer of an JMS RPC call
+     *
      * @param context
      */
     void answer(JmsContext context);

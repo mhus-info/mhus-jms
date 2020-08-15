@@ -32,18 +32,15 @@ public class PojoServiceDescriptor extends ServiceDescriptor {
     public PojoServiceDescriptor(Class<?> ifc) {
         this(ifc, null);
     }
-    
-//    public PojoServiceDescriptor(Object service) {
-//        this(findIfc(service), service);
-//    }
-    
+
+    //    public PojoServiceDescriptor(Object service) {
+    //        this(findIfc(service), service);
+    //    }
+
     public PojoServiceDescriptor(Class<?> ifc, Object service) {
         super(ifc);
         this.service = service;
-        model =
-                new PojoParser()
-                        .parse(ifc, new ActionsOnlyStrategy(true, Public.class))
-                        .getModel();
+        model = new PojoParser().parse(ifc, new ActionsOnlyStrategy(true, Public.class)).getModel();
 
         for (String name : model.getActionNames()) {
             PojoAction act = model.getAction(name);
@@ -56,15 +53,15 @@ public class PojoServiceDescriptor extends ServiceDescriptor {
         return service;
     }
 
-//    private static Class<?> findIfc(Object service) {
-//        // TODO traverse thru all ifcs
-//        Class<?> c = service instanceof Class ? (Class<?>) service : service.getClass();
-//        if (c.isAnnotationPresent(WebService.class)) return c;
-//        for (Class<?> i : c.getInterfaces()) {
-//            if (i.isAnnotationPresent(WebService.class)) return i;
-//        }
-//        return c;
-//    }
+    //    private static Class<?> findIfc(Object service) {
+    //        // TODO traverse thru all ifcs
+    //        Class<?> c = service instanceof Class ? (Class<?>) service : service.getClass();
+    //        if (c.isAnnotationPresent(WebService.class)) return c;
+    //        for (Class<?> i : c.getInterfaces()) {
+    //            if (i.isAnnotationPresent(WebService.class)) return i;
+    //        }
+    //        return c;
+    //    }
 
     private class PojoServiceFunction extends FunctionDescriptor {
 
@@ -73,7 +70,7 @@ public class PojoServiceDescriptor extends ServiceDescriptor {
         public PojoServiceFunction(PojoAction act) {
             this.act = act;
             //			oneWay = act.getAnnotation(Oneway.class) != null || act.getReturnType() == null;
-            oneWay = !((Public)act.getAnnotation(Public.class)).readable();
+            oneWay = !((Public) act.getAnnotation(Public.class)).readable();
             returnType = act.getReturnType();
             if (returnType == null) returnType = Void.class;
         }

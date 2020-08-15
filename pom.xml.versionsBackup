@@ -24,7 +24,7 @@
     </parent>
 	<groupId>de.mhus.jms</groupId>
 	<artifactId>mhus-jms</artifactId>
-	<version>7.1.0</version>
+	<version>7.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<description>JMS framework</description>
 	<url>http://www.mhus.de</url>

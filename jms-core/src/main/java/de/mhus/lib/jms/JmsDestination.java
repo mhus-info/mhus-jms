@@ -29,7 +29,7 @@ public class JmsDestination extends JmsObject {
     public JmsDestination(String destination) {
         this(destination, false);
     }
-    
+
     public JmsDestination(String destination, boolean destinationTopic) {
         this.destination = destination;
         this.destinationTopic = destinationTopic;

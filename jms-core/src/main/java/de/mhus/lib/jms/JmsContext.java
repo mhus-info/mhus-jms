@@ -6,7 +6,7 @@ import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MProperties;
 
 public class JmsContext {
-    
+
     private Message message;
     private MProperties properties;
     private Message answer;
@@ -31,5 +31,4 @@ public class JmsContext {
     public void setAnswer(Message answer) {
         this.answer = answer;
     }
-
 }
