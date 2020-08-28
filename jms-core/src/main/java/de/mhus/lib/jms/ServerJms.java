@@ -32,6 +32,8 @@ import org.apache.activemq.ActiveMQSession;
 
 import de.mhus.lib.core.MPeriod;
 import de.mhus.lib.core.MThread;
+import de.mhus.lib.core.MThreadPool;
+import de.mhus.lib.core.cfg.CfgBoolean;
 import de.mhus.lib.core.cfg.CfgLong;
 import de.mhus.lib.core.cfg.CfgString;
 import de.mhus.lib.core.logging.ITracer;
@@ -53,7 +55,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
 
     private static CfgString CFG_TRACE_ACTIVE =
             new CfgString(ServerJms.class, "traceActivation", "");
-
+    private static CfgBoolean CFG_THREAD_POOL = new CfgBoolean(ServerJms.class, "threadPool", false);
     public ServerJms(JmsDestination dest) {
         super(dest);
     }
@@ -139,64 +141,72 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
 
     @Override
     public void onMessage(final Message message) {
-
-        if (fork) {
-
-            long timeout = getMaxThreadCountTimeout();
-            long mtc = getMaxThreadCount();
-            while (mtc > 0 && getUsedThreads() > mtc) {
-
-                /*
-                "AT100[232] de.mhus.lib.jms.ServerJms$1" Id=232 in BLOCKED on lock=de....aaa.AccessApiImpl@48781daa
-                     owned by AT92[224] de.mhus.lib.jms.ServerJms$1 Id=224
-                     ...
-                    at de.mhus.lib.karaf.jms.JmsDataChannelImpl.receivedOneWay(JmsDataChannelImpl.java:209)
-                    at de.mhus.lib.karaf.jms.ChannelWrapper.receivedOneWay(ChannelWrapper.java:20)
-                    at de.mhus.lib.jms.ServerJms.processMessage(ServerJms.java:182)
-                    at de.mhus.lib.jms.ServerJms$1.run(ServerJms.java:120)
-                    at de.mhus.lib.core.MThread$ThreadContainer.run(MThread.java:192)
-
-                do not block jms driven threads !!! This will cause a deadlock
-
-                				 */
-                for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
-                    if (element.getClassName().equals(ServerJms.class.getCanonicalName())) {
-                        log().w(
-                                        "Too many JMS Threads ... ignore, it's a 'JMS to JMS' call",
-                                        getUsedThreads());
+        try {
+            if (fork) {
+    
+                long timeout = getMaxThreadCountTimeout();
+                long mtc = getMaxThreadCount();
+                while (mtc > 0 && getUsedThreads() > mtc) {
+    
+                    /*
+                    "AT100[232] de.mhus.lib.jms.ServerJms$1" Id=232 in BLOCKED on lock=de....aaa.AccessApiImpl@48781daa
+                         owned by AT92[224] de.mhus.lib.jms.ServerJms$1 Id=224
+                         ...
+                        at de.mhus.lib.karaf.jms.JmsDataChannelImpl.receivedOneWay(JmsDataChannelImpl.java:209)
+                        at de.mhus.lib.karaf.jms.ChannelWrapper.receivedOneWay(ChannelWrapper.java:20)
+                        at de.mhus.lib.jms.ServerJms.processMessage(ServerJms.java:182)
+                        at de.mhus.lib.jms.ServerJms$1.run(ServerJms.java:120)
+                        at de.mhus.lib.core.MThread$ThreadContainer.run(MThread.java:192)
+    
+                    do not block jms driven threads !!! This will cause a deadlock
+    
+                    				 */
+                    for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+                        if (element.getClassName().equals(ServerJms.class.getCanonicalName())) {
+                            log().w(
+                                            "Too many JMS Threads ... ignore, it's a 'JMS to JMS' call",
+                                            getUsedThreads());
+                            break;
+                        }
+                    }
+    
+                    log().w("Too many JMS Threads ... wait!", getUsedThreads());
+                    MThread.sleep(100);
+                    timeout -= 100;
+                    if (timeout < 0) {
+                        log().w("Too many JMS Threads ... timeout", getUsedThreads());
                         break;
                     }
                 }
-
-                log().w("Too many JMS Threads ... wait!", getUsedThreads());
-                MThread.sleep(100);
-                timeout -= 100;
-                if (timeout < 0) {
-                    log().w("Too many JMS Threads ... timeout", getUsedThreads());
-                    break;
-                }
-            }
-
-            incrementUsedThreads();
-            log().t(">>> usedThreads", getUsedThreads());
-
-            new MThread(
-                            new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    try {
-                                        log().t("processMessage", message);
-                                        processMessage(message);
-                                    } finally {
-                                        decrementUsedThreads();
-                                        log().t("<<< usedThreads", getUsedThreads());
+    
+                incrementUsedThreads();
+                log().t(">>> usedThreads", getUsedThreads());
+    
+                Runnable job = new Runnable() {
+    
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            log().t("processMessage", message);
+                                            processMessage(message);
+                                        } finally {
+                                            decrementUsedThreads();
+                                            log().t("<<< usedThreads", getUsedThreads());
+                                        }
                                     }
-                                }
-                            },
-                            getJmsDestination().getName())
-                    .start();
-        } else processMessage(message);
+                                };
+                String jobName  = "JMSJOB:" + getJmsDestination().getName();
+                if (CFG_THREAD_POOL.value())
+                    new MThreadPool(job, jobName).start();
+                else
+                    new MThread(job, jobName).start();
+            } else {
+                Thread.currentThread().setName( "JMSJOB:" + getJmsDestination().getName() );
+                processMessage(message);
+            }
+        } finally {
+            Thread.currentThread().setName( "JMSLISTENER:" + getJmsDestination().getName() );
+        }
     }
 
     /** Overwrite this method to change default behavior. */
