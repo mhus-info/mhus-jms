@@ -35,6 +35,7 @@ import de.mhus.lib.core.MDate;
 import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MThread;
 import de.mhus.lib.core.config.IConfig;
+import de.mhus.lib.core.config.MConfig;
 
 public class MJms {
 
@@ -119,6 +120,18 @@ public class MJms {
         return out;
     }
 
+    public static IConfig getMapConfig(MapMessage msg) throws JMSException {
+        MConfig out = new MConfig();
+        if (msg == null) return out;
+        @SuppressWarnings("unchecked")
+        Enumeration<String> enu = msg.getMapNames();
+        while (enu.hasMoreElements()) {
+            String name = enu.nextElement();
+            out.setProperty(name, msg.getObject(name));
+        }
+        return out;
+    }
+    
     public static Object toPrimitive(Object in) {
         if (in == null) return null;
         if (in.getClass().isPrimitive()) return in;
@@ -173,5 +186,9 @@ public class MJms {
             if (i == 0) MThread.sleep(200);
             else msg.writeBytes(bytes, 0, i);
         }
+    }
+
+    public static String getDefaultConnectionName() {
+        return getConfig().getString("defaultConnection", "default");
     }
 }
