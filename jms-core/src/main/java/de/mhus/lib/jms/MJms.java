@@ -30,16 +30,18 @@ import javax.jms.MapMessage;
 import javax.jms.Message;
 
 import de.mhus.lib.core.IProperties;
-import de.mhus.lib.core.MApi;
 import de.mhus.lib.core.MDate;
 import de.mhus.lib.core.MProperties;
+import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MThread;
+import de.mhus.lib.core.cfg.CfgNode;
 import de.mhus.lib.core.config.IConfig;
 import de.mhus.lib.core.config.MConfig;
 
 public class MJms {
 
-    private static IConfig config;
+    private static CfgNode CFG_NODE = new CfgNode(MJms.class, null, new MConfig());
+    private static String defaultConnectionProperty;
 
     public static void setProperties(IProperties prop, Message msg) throws JMSException {
         setProperties("", prop, msg);
@@ -140,8 +142,7 @@ public class MJms {
     }
 
     public static synchronized IConfig getConfig() {
-        if (config == null) config = MApi.get().getCfgManager().getCfg("jms");
-        return config;
+        return CFG_NODE.value();
     }
 
     public static boolean isMapProperty(Object value) {
@@ -189,6 +190,8 @@ public class MJms {
     }
 
     public static String getDefaultConnectionName() {
-        return getConfig().getString("defaultConnection", "default");
+        if (defaultConnectionProperty == null)
+            defaultConnectionProperty = MSystem.getProperty(MJms.class,"defaultConnection","default");
+        return getConfig().getString("defaultConnection", defaultConnectionProperty );
     }
 }

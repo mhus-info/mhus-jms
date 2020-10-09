@@ -21,6 +21,7 @@ import de.mhus.lib.core.M;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.jms.JmsChannel;
 import de.mhus.lib.jms.JmsConnection;
+import de.mhus.lib.jms.MJms;
 
 public abstract class AbstractJmsDataChannel extends MLog implements JmsDataChannel {
 
@@ -31,7 +32,10 @@ public abstract class AbstractJmsDataChannel extends MLog implements JmsDataChan
     public AbstractJmsDataChannel() {
         name = getClass().getSimpleName();
         JmsDataConnection anno = this.getClass().getAnnotation(JmsDataConnection.class);
-        if (anno != null) connectionName = anno.value();
+        if (anno != null) 
+            connectionName = anno.value();
+        else
+            connectionName = MJms.getDefaultConnectionName();
     }
 
     @Override
