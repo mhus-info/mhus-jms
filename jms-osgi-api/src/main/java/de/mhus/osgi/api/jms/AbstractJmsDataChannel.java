@@ -32,10 +32,8 @@ public abstract class AbstractJmsDataChannel extends MLog implements JmsDataChan
     public AbstractJmsDataChannel() {
         name = getClass().getSimpleName();
         JmsDataConnection anno = this.getClass().getAnnotation(JmsDataConnection.class);
-        if (anno != null) 
-            connectionName = anno.value();
-        else
-            connectionName = MJms.getDefaultConnectionName();
+        if (anno != null) connectionName = anno.value();
+        else connectionName = MJms.getDefaultConnectionName();
     }
 
     @Override

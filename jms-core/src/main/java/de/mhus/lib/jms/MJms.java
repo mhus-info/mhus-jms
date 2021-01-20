@@ -133,7 +133,7 @@ public class MJms {
         }
         return out;
     }
-    
+
     public static Object toPrimitive(Object in) {
         if (in == null) return null;
         if (in.getClass().isPrimitive()) return in;
@@ -191,7 +191,8 @@ public class MJms {
 
     public static String getDefaultConnectionName() {
         if (defaultConnectionProperty == null)
-            defaultConnectionProperty = MSystem.getProperty(MJms.class,"defaultConnection","default");
-        return getConfig().getString("defaultConnection", defaultConnectionProperty );
+            defaultConnectionProperty =
+                    MSystem.getProperty(MJms.class, "defaultConnection", "default");
+        return getConfig().getString("defaultConnection", defaultConnectionProperty);
     }
 }
