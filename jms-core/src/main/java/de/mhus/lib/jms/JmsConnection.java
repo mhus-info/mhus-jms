@@ -22,6 +22,7 @@ import javax.jms.Session;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 
+import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.cfg.CfgString;
 
 public class JmsConnection extends JmsObject implements ExceptionListener {
@@ -126,5 +127,10 @@ public class JmsConnection extends JmsObject implements ExceptionListener {
     @Override
     public JmsDestination getJmsDestination() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return MSystem.toString(this, url, user);
     }
 }
