@@ -95,7 +95,12 @@ public abstract class AbstractJmsDataChannel extends MLog implements JmsDataChan
                 try {
                     checkChannel();
                     channel.getJmsDestination().setConnection(con);
-                    channel.open();
+                    if (!channel.isClosed())
+                        channel.open();
+                    else {
+                        log().w("Try to connect channel but it's closed",channel);
+                        channel.reopen();
+                    }
                 } catch (JMSException e) {
                     log().w(getName(), getConnectionName(), e);
                 }
