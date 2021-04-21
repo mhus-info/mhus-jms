@@ -29,9 +29,14 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.TemporaryQueue;
 
+import org.apache.shiro.subject.Subject;
+
+import de.mhus.lib.core.M;
 import de.mhus.lib.core.MPeriod;
-import de.mhus.lib.core.config.IConfig;
+import de.mhus.lib.core.aaa.Aaa;
+import de.mhus.lib.core.cfg.CfgLong;
 import de.mhus.lib.core.logging.ITracer;
+import de.mhus.lib.core.security.TrustApi;
 import io.opentracing.Scope;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
@@ -39,6 +44,10 @@ import io.opentracing.tag.Tags;
 
 public class ClientJms extends JmsChannel implements MessageListener {
 
+    private static final CfgLong CFG_ANSWER_TIMEOUT = new CfgLong(MJms.class, "answerTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS * 5);
+    private static final CfgLong CFG_WARN_TIMEOUT = new CfgLong(MJms.class, "warnTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS);
+    private static final CfgLong CFG_BROADCAST_TIMEOUT = new CfgLong(MJms.class, "broadcastTimeout", 5000);
+    
     private MessageProducer producer;
 
     private TemporaryQueue answerQueue;
@@ -46,30 +55,22 @@ public class ClientJms extends JmsChannel implements MessageListener {
 
     private HashMap<String, Message> responses = null;
     private HashSet<String> allowedIds = new HashSet<>();
-    private long timeout = MPeriod.MINUTE_IN_MILLISECOUNDS * 5;
-    private long warnTimeout = MPeriod.MINUTE_IN_MILLISECOUNDS;
-    private long broadcastTimeout = 5000; // 5 sec. to wait for answers by default
+    private long timeout = CFG_ANSWER_TIMEOUT.value();
+    private long warnTimeout = CFG_WARN_TIMEOUT.value();
+    private long broadcastTimeout = CFG_BROADCAST_TIMEOUT.value();
 
     private JmsInterceptor interceptorOut;
     private JmsInterceptor interceptorIn;
 
     public ClientJms(JmsDestination dest) {
         super(dest);
-        try {
-            IConfig cfg = MJms.getConfig();
-            timeout = cfg.getLong("answerTimeout", timeout);
-            warnTimeout = cfg.getLong("answerWarnTimeout", warnTimeout);
-            broadcastTimeout = cfg.getLong("broadcastTimeout", broadcastTimeout);
-        } catch (Throwable t) {
-            log().t(t);
-        }
     }
 
     public void sendJmsOneWay(Message msg) throws JMSException {
         try (Scope scope =
                 ITracer.get().enter("jmscall-oneway", "name", getName(), "dest", dest.toString())) {
             open();
-            JmsContext context = new JmsContext(msg);
+            JmsContext context = new JmsContext(msg, Aaa.getSubject());
             prepareMessage(msg);
             if (interceptorOut != null) interceptorOut.prepare(context);
             log().d("sendJmsOneWay", dest, producer.getTimeToLive(), msg);
@@ -112,6 +113,14 @@ public class ClientJms extends JmsChannel implements MessageListener {
                                 }
                             });
         }
+
+        Subject subject = Aaa.getSubject();
+        if (subject != null && subject.isAuthenticated()) {
+            String tokenStr = M.l(TrustApi.class).createToken("jms:" + getJmsDestination(), msg, subject);
+            if (tokenStr != null)
+                msg.setStringProperty(M.PARAM_AUTH_TOKEN, tokenStr);
+            msg.setStringProperty("_account", String.valueOf(subject.getPrincipal()));
+        }
     }
 
     public Message sendJms(Message msg) throws JMSException {
@@ -119,7 +128,7 @@ public class ClientJms extends JmsChannel implements MessageListener {
                 ITracer.get().enter("jmscall", "name", getName(), "dest", dest.toString())) {
             open();
 
-            JmsContext context = new JmsContext(msg);
+            JmsContext context = new JmsContext(msg, Aaa.getSubject());
             prepareMessage(msg);
             String id = msg.getJMSMessageID();
             openAnswerQueue();

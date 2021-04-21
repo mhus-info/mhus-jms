@@ -17,6 +17,8 @@ package de.mhus.lib.jms;
 
 import javax.jms.Message;
 
+import org.apache.shiro.subject.Subject;
+
 import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MProperties;
 
@@ -25,9 +27,11 @@ public class JmsContext {
     private Message message;
     private MProperties properties;
     private Message answer;
+    private Subject subject;
 
-    public JmsContext(Message message) {
+    public JmsContext(Message message, Subject subject) {
         this.message = message;
+        this.subject = subject;
     }
 
     public Message getMessage() {
@@ -46,4 +50,9 @@ public class JmsContext {
     public void setAnswer(Message answer) {
         this.answer = answer;
     }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
 }

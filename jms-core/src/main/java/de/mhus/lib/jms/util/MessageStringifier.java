@@ -38,21 +38,24 @@ public class MessageStringifier {
         if (msg == null) return "null";
         StringBuilder sb = new StringBuilder();
         try {
-            sb.append("=== JMS Message === ")
+            sb.append("\n=== JMS Message: ")
                     .append(msg.getClass().getSimpleName())
                     .append(" ===\n");
-            sb.append("Message ID    : ").append(msg.getJMSMessageID()).append('\n');
+            if (msg.getJMSMessageID() != null)
+                sb.append(" Message ID    : ").append(msg.getJMSMessageID()).append('\n');
             // sb.append("Destination   : ").append(msg.getJMSDestination()).append('\n');
             // sb.append("Type          : ").append(msg.getJMSType()).append('\n');
-            sb.append("Reply         : ").append(msg.getJMSReplyTo()).append('\n');
+            if (msg.getJMSReplyTo() != null)
+                sb.append(" Reply         : ").append(msg.getJMSReplyTo()).append('\n');
             // sb.append("Timestamp     : ").append(msg.getJMSTimestamp()).append('\n');
             if (msg.getJMSExpiration() != 0)
-                sb.append("Expiration    : ")
+                sb.append(" Expiration    : ")
                         .append(msg.getJMSExpiration())
                         .append(" (")
                         .append(msg.getJMSExpiration() - msg.getJMSTimestamp())
                         .append(")\n");
-            sb.append("Correlation ID: ").append(msg.getJMSCorrelationID()).append('\n');
+            if (msg.getJMSCorrelationID() != null)
+                sb.append(" Correlation ID: ").append(msg.getJMSCorrelationID()).append('\n');
 
             for (@SuppressWarnings("unchecked") Enumeration<String> e = msg.getPropertyNames();
                     e.hasMoreElements(); ) {
@@ -63,25 +66,25 @@ public class MessageStringifier {
             }
 
             if (msg instanceof MapMessage) {
-                sb.append("Map:\n");
+                sb.append(" Map:\n");
                 MapMessage m = (MapMessage) msg;
                 for (@SuppressWarnings("unchecked") Enumeration<String> e = m.getMapNames();
                         e.hasMoreElements(); ) {
                     String key = e.nextElement();
                     Object val = ((MapMessage) msg).getObject(key);
                     if (key.contains("assword")) val = "[***]";
-                    sb.append("  ")
+                    sb.append("   ")
                             .append(key)
                             .append('=')
                             .append(MString.toString(val))
                             .append('\n');
                 }
             } else if (msg instanceof TextMessage) {
-                sb.append("Text: ").append(((TextMessage) msg).getText()).append('\n');
+                sb.append(" Text: ").append(((TextMessage) msg).getText()).append('\n');
             } else if (msg instanceof BytesMessage) {
-                sb.append("Size: " + ((BytesMessage) msg).getBodyLength());
+                sb.append(" Size: " + ((BytesMessage) msg).getBodyLength());
             } else if (msg instanceof ObjectMessage) {
-                sb.append("Object: ").append(((ObjectMessage) msg).getObject()).append('\n');
+                sb.append(" Object: ").append(((ObjectMessage) msg).getObject()).append('\n');
             }
         } catch (Throwable t) {
             sb.append(t);

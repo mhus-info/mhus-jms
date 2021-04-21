@@ -20,19 +20,15 @@ import java.util.UUID;
 import javax.jms.DeliveryMode;
 import javax.jms.Session;
 
-import de.mhus.lib.core.config.IConfig;
+import de.mhus.lib.core.cfg.CfgLong;
 
 public abstract class JmsChannel extends JmsObject {
 
+    private static final CfgLong CFG_DEFAULT_TIMEOUT = new CfgLong(MJms.class, "msgTimeToLive", 60 * 60 * 1000);
     protected JmsDestination dest;
     protected int deliveryMode = DeliveryMode.NON_PERSISTENT;
     protected int priority = 0; // default
-    protected long timeToLive = 60 * 60 * 1000;
-
-    {
-        IConfig cfg = MJms.getConfig();
-        timeToLive = cfg.getLong("msgTimeToLive", timeToLive);
-    }
+    protected long timeToLive = CFG_DEFAULT_TIMEOUT.value();
 
     public JmsChannel(String destination, boolean destinationTopic) {
         dest = new JmsDestination(destination, destinationTopic);

@@ -28,20 +28,26 @@ import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
+import javax.jms.TextMessage;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MDate;
+import de.mhus.lib.core.MJson;
 import de.mhus.lib.core.MProperties;
-import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MThread;
-import de.mhus.lib.core.cfg.CfgNode;
+import de.mhus.lib.core.cfg.CfgString;
 import de.mhus.lib.core.config.IConfig;
 import de.mhus.lib.core.config.MConfig;
+import de.mhus.lib.core.logging.Log;
+import de.mhus.lib.core.operation.util.MapValue;
+import de.mhus.lib.core.pojo.MPojo;
+import de.mhus.lib.errors.MException;
 
 public class MJms {
-
-    private static CfgNode CFG_NODE = new CfgNode(MJms.class, null, new MConfig());
-    private static String defaultConnectionProperty;
+    private static final Log log = Log.getLog(MJms.class);
+    private static final CfgString CFG_DEFAULT_CONNECTION = new CfgString(MJms.class, "defaultConnection", "default");
 
     public static void setProperties(IProperties prop, Message msg) throws JMSException {
         setProperties("", prop, msg);
@@ -141,10 +147,6 @@ public class MJms {
         return String.valueOf(in);
     }
 
-    public static synchronized IConfig getConfig() {
-        return CFG_NODE.value();
-    }
-
     public static boolean isMapProperty(Object value) {
         return value == null
                 || value.getClass().isPrimitive()
@@ -190,9 +192,103 @@ public class MJms {
     }
 
     public static String getDefaultConnectionName() {
-        if (defaultConnectionProperty == null)
-            defaultConnectionProperty =
-                    MSystem.getProperty(MJms.class, "defaultConnection", "default");
-        return getConfig().getString("defaultConnection", defaultConnectionProperty);
+        return CFG_DEFAULT_CONNECTION.value();
     }
+    
+    public static Message toMessage(JmsObject jms,Object in) throws JMSException {
+        
+        Message ret = null;
+        if (in == null) {
+            ret = jms.createTextMessage(null);
+            ret.setStringProperty("_encoding", "empty");
+        } else
+        if (in instanceof MapValue) {
+            ret = jms.createMapMessage();
+            ret.setStringProperty("_encoding", "map");
+            MJms.setMapProperties((Map<?, ?>)((MapValue)in).getValue(), (MapMessage)ret);
+        } else
+        if (in instanceof byte[]) {
+            ret = jms.createBytesMessage();
+            ret.setStringProperty("_encoding", "byte[]");
+            ((BytesMessage)ret).writeBytes((byte[])in);
+        } else
+        if (in instanceof InputStream) {
+            ret = jms.createBytesMessage();
+            ret.setStringProperty("_encoding", "byte[]");
+            InputStream is = (InputStream)in;
+            long free = Runtime.getRuntime().freeMemory();
+            if (free < 1024) free = 1024;
+            if (free > 32768) free = 32768;
+            byte[] buffer = new byte[(int) free];
+            int i = 0;
+            try {
+                while ((i = is.read(buffer)) != -1) {
+                    if (i == 0) MThread.sleep(100);
+                    else {
+                        ((BytesMessage)ret).writeBytes(buffer, 0, i);
+                    }
+                }
+            } catch (Exception e) {
+                log.d(e);
+                throw new JMSException(e.toString());
+            }
+        } else
+        if ((in instanceof IConfig) && !((IConfig)in).isProperties() ) {
+            ret = jms.createTextMessage();
+            ret.setStringProperty("_encoding", "json");
+            try {
+                String val = IConfig.toPrettyJsonString( (IConfig)in );
+                ((TextMessage)ret).setText( val );
+            } catch (MException e) {
+                log.d(e);
+                throw new JMSException(e.toString());
+            }
+        } else
+        if (in instanceof IProperties) {
+            ret = jms.createMapMessage();
+            ret.setStringProperty("_encoding", "properties");
+            MJms.setMapProperties( (IProperties)in, (MapMessage)ret);
+        } else
+        if (in instanceof Map) {
+            boolean primitive = true;
+            for (Object value : ((Map<?,?>)in).values())
+                if (value != null && !value.getClass().isPrimitive() && !(value instanceof String)) {
+                    primitive = false;
+                    break;
+                }
+            if (primitive) {
+                ret = jms.createMapMessage();
+                ret.setStringProperty("_encoding", "map");
+                MJms.setMapProperties( (Map<?,?>)in, (MapMessage)ret);
+            } else {
+                MConfig cfg = new MConfig();
+                cfg.putMapToConfig((Map<?,?>)in);
+
+                ret = jms.createTextMessage();
+                ret.setStringProperty("_encoding", "json");
+                try {
+                    String val = IConfig.toPrettyJsonString( cfg );
+                    ((TextMessage)ret).setText( val );
+                } catch (MException e) {
+                    log.d(e);
+                    throw new JMSException(e.toString());
+                }
+            }
+        } else {
+            ret = jms.createTextMessage();
+            ret.setStringProperty("_encoding", "json");
+            try {
+                ObjectNode json = MJson.createObjectNode();
+                MPojo.pojoToJson(in, json);
+                ((TextMessage)ret).setText(MJson.toPrettyString(json));
+            } catch (IOException e) {
+                log.d(e);
+                throw new JMSException(e.getMessage());
+            }
+        }
+        if (ret != null && in != null)
+            ret.setStringProperty("_type", in.getClass().getCanonicalName());
+        return ret;
+    }
+
 }

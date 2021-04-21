@@ -29,10 +29,14 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.ActiveMQSession;
+import org.apache.shiro.subject.Subject;
 
+import de.mhus.lib.core.M;
 import de.mhus.lib.core.MPeriod;
 import de.mhus.lib.core.MThread;
 import de.mhus.lib.core.MThreadPool;
+import de.mhus.lib.core.aaa.Aaa;
+import de.mhus.lib.core.aaa.SubjectEnvironment;
 import de.mhus.lib.core.cfg.CfgBoolean;
 import de.mhus.lib.core.cfg.CfgLong;
 import de.mhus.lib.core.cfg.CfgString;
@@ -334,7 +338,18 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
             }
             log().d("received", dest, message);
 
-            JmsContext context = new JmsContext(message);
+            Subject subject = null;
+            try {
+                String tokenStr = message.getStringProperty(M.PARAM_AUTH_TOKEN);
+                if (tokenStr != null) {
+                    subject = Aaa.login(tokenStr);
+                }
+            } catch (Throwable e) {
+                log().d("4",e);
+                return;
+            }
+
+            JmsContext context = new JmsContext(message, subject);
             try {
                 if (interceptorIn != null) {
                     interceptorIn.begin(context);
@@ -354,7 +369,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                 return;
             }
 
-            try {
+            try (SubjectEnvironment access = Aaa.asSubjectOrAnonymous(subject)) {
                 if (message.getJMSReplyTo() != null) {
                     Message answer = null;
                     try {
