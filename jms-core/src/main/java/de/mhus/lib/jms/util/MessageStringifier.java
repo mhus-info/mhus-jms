@@ -41,6 +41,8 @@ public class MessageStringifier {
             sb.append("\n=== JMS Message: ")
                     .append(msg.getClass().getSimpleName())
                     .append(" ===\n");
+            if (msg.getJMSDestination() != null)
+                sb.append(" Destination   : ").append(msg.getJMSDestination()).append('\n');
             if (msg.getJMSMessageID() != null)
                 sb.append(" Message ID    : ").append(msg.getJMSMessageID()).append('\n');
             // sb.append("Destination   : ").append(msg.getJMSDestination()).append('\n');
