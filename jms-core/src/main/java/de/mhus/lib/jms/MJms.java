@@ -38,9 +38,9 @@ import de.mhus.lib.core.MJson;
 import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MThread;
 import de.mhus.lib.core.cfg.CfgString;
-import de.mhus.lib.core.config.IConfig;
-import de.mhus.lib.core.config.MConfig;
 import de.mhus.lib.core.logging.Log;
+import de.mhus.lib.core.node.INode;
+import de.mhus.lib.core.node.MNode;
 import de.mhus.lib.core.operation.util.MapValue;
 import de.mhus.lib.core.pojo.MPojo;
 import de.mhus.lib.errors.MException;
@@ -128,8 +128,8 @@ public class MJms {
         return out;
     }
 
-    public static IConfig getMapConfig(MapMessage msg) throws JMSException {
-        MConfig out = new MConfig();
+    public static INode getMapConfig(MapMessage msg) throws JMSException {
+        MNode out = new MNode();
         if (msg == null) return out;
         @SuppressWarnings("unchecked")
         Enumeration<String> enu = msg.getMapNames();
@@ -233,11 +233,11 @@ public class MJms {
                 throw new JMSException(e.toString());
             }
         } else
-        if ((in instanceof IConfig) && !((IConfig)in).isProperties() ) {
+        if ((in instanceof INode) && !((INode)in).isProperties() ) {
             ret = jms.createTextMessage();
             ret.setStringProperty("_encoding", "json");
             try {
-                String val = IConfig.toPrettyJsonString( (IConfig)in );
+                String val = INode.toPrettyJsonString( (INode)in );
                 ((TextMessage)ret).setText( val );
             } catch (MException e) {
                 log.d(e);
@@ -261,13 +261,13 @@ public class MJms {
                 ret.setStringProperty("_encoding", "map");
                 MJms.setMapProperties( (Map<?,?>)in, (MapMessage)ret);
             } else {
-                MConfig cfg = new MConfig();
-                cfg.putMapToConfig((Map<?,?>)in);
+                MNode cfg = new MNode();
+                cfg.putMapToNode((Map<?,?>)in);
 
                 ret = jms.createTextMessage();
                 ret.setStringProperty("_encoding", "json");
                 try {
-                    String val = IConfig.toPrettyJsonString( cfg );
+                    String val = INode.toPrettyJsonString( cfg );
                     ((TextMessage)ret).setText( val );
                 } catch (MException e) {
                     log.d(e);
