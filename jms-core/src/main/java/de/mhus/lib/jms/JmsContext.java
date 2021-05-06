@@ -21,6 +21,7 @@ import org.apache.shiro.subject.Subject;
 
 import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MProperties;
+import de.mhus.lib.core.aaa.Aaa;
 
 public class JmsContext {
 
@@ -53,6 +54,10 @@ public class JmsContext {
 
     public Subject getSubject() {
         return subject;
+    }
+
+    public String getPrincipal() {
+        return subject == null ? Aaa.USER_GUEST.value() : String.valueOf(subject.getPrincipal());
     }
 
 }

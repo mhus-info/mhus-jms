@@ -141,6 +141,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         if (interceptorOut != null) interceptorOut.prepare(rpcContext);
         answer.setJMSMessageID(createMessageId());
         answer.setJMSCorrelationID(msg.getJMSCorrelationID());
+        answer.setStringProperty("_principal", rpcContext.getPrincipal());
         replyProducer.send(
                 msg.getJMSReplyTo(), answer, deliveryMode, getPriority(), getTimeToLive());
     }
@@ -346,6 +347,17 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                 }
             } catch (Throwable e) {
                 log().d("4",e);
+                try {
+                    if (message.getJMSReplyTo() != null) {
+                        TextMessage answer = createErrorAnswer(e);
+                        log().d("errorAnswer", dest, answer);
+                        JmsContext context = new JmsContext(message, null);
+                        context.setAnswer(answer);
+                        sendAnswer(context);
+                    }
+                } catch (Throwable tt) {
+                    log().w(tt);
+                }
                 return;
             }
 
