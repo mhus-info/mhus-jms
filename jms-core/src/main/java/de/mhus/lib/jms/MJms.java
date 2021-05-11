@@ -28,6 +28,7 @@ import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
 import javax.jms.TextMessage;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -212,6 +213,11 @@ public class MJms {
             ret.setStringProperty("_encoding", "byte[]");
             ((BytesMessage)ret).writeBytes((byte[])in);
         } else
+        if (in instanceof String) {
+            ret = jms.createTextMessage();
+            ret.setStringProperty("_encoding", "text");
+            ((TextMessage)ret).setText((String)in);
+        } else
         if (in instanceof InputStream) {
             ret = jms.createBytesMessage();
             ret.setStringProperty("_encoding", "byte[]");
@@ -289,6 +295,28 @@ public class MJms {
         if (ret != null && in != null)
             ret.setStringProperty("_type", in.getClass().getCanonicalName());
         return ret;
+    }
+
+    public static Object toObject(Message msg) throws JMSException {
+        if (msg == null)
+            throw new NullPointerException("msg is null");
+        if (msg instanceof MapMessage) {
+            MapMessage mapMsg = (MapMessage)msg;
+            return MJms.getMapProperties(mapMsg);
+        } else
+        if (msg instanceof TextMessage) {
+            return ((TextMessage)msg).getText();
+        } else
+        if (msg instanceof BytesMessage) {
+            long len = ((BytesMessage)msg).getBodyLength();
+            byte[] bytes = new byte[(int) len];
+            ((BytesMessage)msg).readBytes(bytes);
+            return bytes;
+        } else
+        if (msg instanceof ObjectMessage) {
+            return ((ObjectMessage)msg).getObject();
+        }
+        throw new JMSException("Unknown message type: " + msg.getClass().getCanonicalName());
     }
 
 }
