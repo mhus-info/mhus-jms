@@ -18,6 +18,7 @@ package de.mhus.lib.jms;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Map;
@@ -319,4 +320,38 @@ public class MJms {
         throw new JMSException("Unknown message type: " + msg.getClass().getCanonicalName());
     }
 
+    public static INode toNode(Message msg) throws JMSException {
+        if (msg == null)
+            throw new NullPointerException("msg is null");
+        if (msg instanceof MapMessage) {
+            MapMessage mapMsg = (MapMessage)msg;
+            return MJms.getMapConfig(mapMsg);
+        } else
+        if (msg instanceof TextMessage) {
+            try {
+                return INode.readNodeFromString(
+                        ((TextMessage)msg).getText() 
+                        );
+            } catch (MException e) {
+                log.d(e);
+                throw new JMSException(e.toString());
+            }
+        } else
+        if (msg instanceof BytesMessage) {
+            long len = ((BytesMessage)msg).getBodyLength();
+            byte[] bytes = new byte[(int) len];
+            ((BytesMessage)msg).readBytes(bytes);
+            MNode ret = new MNode();
+            ret.put(INode.NAMELESS_VALUE, bytes);
+            return ret;
+        } else
+        if (msg instanceof ObjectMessage) {
+            Serializable obj = ((ObjectMessage)msg).getObject();
+            MNode ret = new MNode();
+            ret.put(INode.NAMELESS_VALUE, obj);
+            return ret;
+        }
+        throw new JMSException("Unknown message type: " + msg.getClass().getCanonicalName());
+    }
+    
 }
