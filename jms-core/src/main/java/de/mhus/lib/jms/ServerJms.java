@@ -141,7 +141,11 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         if (interceptorOut != null) interceptorOut.prepare(rpcContext);
         answer.setJMSMessageID(createMessageId());
         answer.setJMSCorrelationID(msg.getJMSCorrelationID());
-        answer.setStringProperty("_principal", rpcContext.getPrincipal());
+        try {
+            answer.setStringProperty("_principal", rpcContext.getPrincipal());
+        } catch (javax.jms.MessageNotWriteableException e) {
+            log().t(getClass(),e);
+        }
         replyProducer.send(
                 msg.getJMSReplyTo(), answer, deliveryMode, getPriority(), getTimeToLive());
     }
