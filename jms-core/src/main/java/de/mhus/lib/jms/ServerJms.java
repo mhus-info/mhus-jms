@@ -15,10 +15,6 @@
  */
 package de.mhus.lib.jms;
 
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Map.Entry;
-
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -41,11 +37,9 @@ import de.mhus.lib.core.cfg.CfgBoolean;
 import de.mhus.lib.core.cfg.CfgLong;
 import de.mhus.lib.core.cfg.CfgString;
 import de.mhus.lib.core.logging.ITracer;
-import de.mhus.lib.errors.MRuntimeException;
 import io.opentracing.Scope;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMap;
 import io.opentracing.tag.Tags;
 
 public abstract class ServerJms extends JmsChannel implements MessageListener {
@@ -143,9 +137,22 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         answer.setJMSCorrelationID(msg.getJMSCorrelationID());
         try {
             answer.setStringProperty("_principal", rpcContext.getPrincipal());
-        } catch (javax.jms.MessageNotWriteableException e) {
+        } catch (Throwable e) {
             log().t(getClass(),e);
         }
+        try {
+            if (ITracer.get().current() != null) {
+                Tags.SPAN_KIND.set(ITracer.get().current(), Tags.SPAN_KIND_CLIENT);
+                ITracer.get()
+                        .tracer()
+                        .inject(
+                                ITracer.get().current().context(),
+                                Format.Builtin.TEXT_MAP, new TraceJmsMap(answer));
+            }
+        } catch (Throwable t) {
+            log().d(t);
+        }
+
         replyProducer.send(
                 msg.getJMSReplyTo(), answer, deliveryMode, getPriority(), getTimeToLive());
     }
@@ -267,61 +274,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                             ITracer.get()
                                     .tracer()
                                     .extract(
-                                            Format.Builtin.TEXT_MAP,
-                                            new TextMap() {
-
-                                                @Override
-                                                public Iterator<Entry<String, String>> iterator() {
-                                                    try {
-                                                        @SuppressWarnings("unchecked")
-                                                        final Enumeration<String> enu =
-                                                                message.getPropertyNames();
-                                                        return new Iterator<
-                                                                Entry<String, String>>() {
-                                                            @Override
-                                                            public boolean hasNext() {
-                                                                return enu.hasMoreElements();
-                                                            }
-
-                                                            @Override
-                                                            public Entry<String, String> next() {
-                                                                final String key =
-                                                                        enu.nextElement();
-                                                                return new Entry<String, String>() {
-
-                                                                    @Override
-                                                                    public String getKey() {
-                                                                        return key;
-                                                                    }
-
-                                                                    @Override
-                                                                    public String getValue() {
-                                                                        try {
-                                                                            return message
-                                                                                    .getStringProperty(
-                                                                                            key);
-                                                                        } catch (JMSException e) {
-                                                                            throw new MRuntimeException(
-                                                                                    key, e);
-                                                                        }
-                                                                    }
-
-                                                                    @Override
-                                                                    public String setValue(
-                                                                            String value) {
-                                                                        return null;
-                                                                    }
-                                                                };
-                                                            }
-                                                        };
-                                                    } catch (JMSException e) {
-                                                        throw new MRuntimeException(e);
-                                                    }
-                                                }
-
-                                                @Override
-                                                public void put(String key, String value) {}
-                                            });
+                                            Format.Builtin.TEXT_MAP, new TraceJmsMap(message));
 
                     if (parentSpanCtx == null) {
                         scope = ITracer.get().start(getName(), CFG_TRACE_ACTIVE.value());

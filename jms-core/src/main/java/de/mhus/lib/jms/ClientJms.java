@@ -17,9 +17,7 @@ package de.mhus.lib.jms;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -39,7 +37,6 @@ import de.mhus.lib.core.logging.ITracer;
 import de.mhus.lib.core.security.TrustApi;
 import io.opentracing.Scope;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMap;
 import io.opentracing.tag.Tags;
 
 public class ClientJms extends JmsChannel implements MessageListener {
@@ -89,31 +86,18 @@ public class ClientJms extends JmsChannel implements MessageListener {
 
         msg.setJMSMessageID(createMessageId());
 
-        if (ITracer.get().current() != null) {
-            Tags.SPAN_KIND.set(ITracer.get().current(), Tags.SPAN_KIND_CLIENT);
-            ITracer.get()
-                    .tracer()
-                    .inject(
-                            ITracer.get().current().context(),
-                            Format.Builtin.TEXT_MAP,
-                            new TextMap() {
-
-                                @Override
-                                public Iterator<Entry<String, String>> iterator() {
-                                    return null;
-                                }
-
-                                @Override
-                                public void put(String key, String value) {
-                                    try {
-                                        msg.setStringProperty(key, value);
-                                    } catch (JMSException e) {
-                                        log().e(dest, key, value, e);
-                                    }
-                                }
-                            });
+        try {
+            if (ITracer.get().current() != null) {
+                Tags.SPAN_KIND.set(ITracer.get().current(), Tags.SPAN_KIND_CLIENT);
+                ITracer.get()
+                        .tracer()
+                        .inject(
+                                ITracer.get().current().context(),
+                                Format.Builtin.TEXT_MAP, new TraceJmsMap(msg));
+            }
+        } catch (Throwable t) {
+            log().d(t);
         }
-
         Subject subject = Aaa.getSubject();
         if (subject != null && subject.isAuthenticated()) {
             String tokenStr = M.l(TrustApi.class).createToken("jms:" + getJmsDestination(), msg, subject);
