@@ -34,6 +34,7 @@ import de.mhus.lib.core.MThreadPool;
 import de.mhus.lib.core.aaa.Aaa;
 import de.mhus.lib.core.aaa.SubjectEnvironment;
 import de.mhus.lib.core.cfg.CfgBoolean;
+import de.mhus.lib.core.cfg.CfgInt;
 import de.mhus.lib.core.cfg.CfgLong;
 import de.mhus.lib.core.cfg.CfgString;
 import de.mhus.lib.core.logging.ITracer;
@@ -44,8 +45,10 @@ import io.opentracing.tag.Tags;
 
 public abstract class ServerJms extends JmsChannel implements MessageListener {
 
-    private static long usedThreads = 0;
-    private static CfgLong maxThreadCount = new CfgLong(ServerJms.class, "maxThreadCount", -1);
+    private static final String JOB_PREFIX = "JMSJOB:";
+    private static final String LISTENER_PREFIX = "JMSLISTENER:";
+    private static int usedThreads = 0;
+    private static CfgInt CFG_MAX_THREAD_COUNT = new CfgInt(ServerJms.class, "maxThreadCount", -1);
     private static CfgLong maxThreadCountTimeout =
             new CfgLong(ServerJms.class, "maxThreadCountTimeout", 10000);
     private static CfgLong inactivityTimeout =
@@ -69,6 +72,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
 
     private boolean fork = true;
     private long lastActivity = System.currentTimeMillis();
+    private int maxThreadCount = -2;
 
     @Override
     public synchronized void open() throws JMSException {
@@ -197,7 +201,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                     }
                 }
 
-                incrementUsedThreads();
+                int nr = incrementUsedThreads();
                 log().t(">>> usedThreads", getUsedThreads());
 
                 Runnable job =
@@ -214,15 +218,15 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                                 }
                             }
                         };
-                String jobName = "JMSJOB:" + getJmsDestination().getName();
+                String jobName = JOB_PREFIX + nr + " " + getJmsDestination().getName();
                 if (CFG_THREAD_POOL.value()) new MThreadPool(job, jobName).start();
                 else new MThread(job, jobName).start();
             } else {
-                Thread.currentThread().setName("JMSJOB:" + getJmsDestination().getName());
+                Thread.currentThread().setName(JOB_PREFIX + "- " + getJmsDestination().getName());
                 processMessage(message);
             }
         } finally {
-            Thread.currentThread().setName("JMSLISTENER:" + getJmsDestination().getName());
+            Thread.currentThread().setName(LISTENER_PREFIX + getJmsDestination().getName());
         }
     }
 
@@ -232,8 +236,8 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
     }
 
     /** Overwrite this method to change default behavior. */
-    protected void incrementUsedThreads() {
-        usedThreads++;
+    protected int incrementUsedThreads() {
+        return usedThreads++;
     }
 
     /**
@@ -241,17 +245,25 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
      *
      * @return current used threads
      */
-    protected long getUsedThreads() {
+    public int getUsedThreads() {
         return usedThreads;
     }
 
     /**
      * Overwrite this method to change default behavior.
      *
-     * @return
+     * @return max thread count or -1
      */
-    protected long getMaxThreadCount() {
-        return maxThreadCount.value();
+    public long getMaxThreadCount() {
+        return maxThreadCount >= -2 ? maxThreadCount : CFG_MAX_THREAD_COUNT.value();
+    }
+    
+    /**
+     * Set max thread count. Set to -1 for unlimited, -2 to use global configuration
+     * @param maxThreadCount
+     */
+    public void setMaxThreadCount(int maxThreadCount) {
+        this.maxThreadCount = maxThreadCount;
     }
 
     /**
