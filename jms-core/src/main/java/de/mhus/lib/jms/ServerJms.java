@@ -255,7 +255,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                                             Message next = null;
                                             synchronized (this) {
                                                 if (backlog.size() > 0)
-                                                    next = backlog.getFirst();
+                                                    next = backlog.removeFirst();
                                             }
                                             if (next == null) 
                                                 break;
