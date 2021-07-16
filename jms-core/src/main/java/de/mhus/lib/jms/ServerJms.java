@@ -15,6 +15,8 @@
  */
 package de.mhus.lib.jms;
 
+import java.util.LinkedList;
+
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -45,9 +47,11 @@ import io.opentracing.tag.Tags;
 
 public abstract class ServerJms extends JmsChannel implements MessageListener {
 
+    public enum STRATEGY {DROP,JSON_ERROR,QUEUE,WAIT};
+    
     private static final String JOB_PREFIX = "JMSJOB:";
     private static final String LISTENER_PREFIX = "JMSLISTENER:";
-    private static int usedThreads = 0;
+    private static volatile int usedThreads = 0;
     private static CfgInt CFG_MAX_THREAD_COUNT = new CfgInt(ServerJms.class, "maxThreadCount", -1);
     private static CfgLong maxThreadCountTimeout =
             new CfgLong(ServerJms.class, "maxThreadCountTimeout", 10000);
@@ -73,6 +77,8 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
     private boolean fork = true;
     private long lastActivity = System.currentTimeMillis();
     private int maxThreadCount = -2;
+    private STRATEGY overloadStrategy = STRATEGY.WAIT;
+    private LinkedList<Message> backlog;
 
     @Override
     public synchronized void open() throws JMSException {
@@ -133,7 +139,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         if (answer == null) {
             answer =
                     createErrorAnswer(
-                            null); // other side is waiting for an answer - send a null text
+                            "null"); // other side is waiting for an answer - send a null text
             rpcContext.setAnswer(answer);
         }
         if (interceptorOut != null) interceptorOut.prepare(rpcContext);
@@ -166,38 +172,68 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         try {
             if (fork) {
 
-                long timeout = getMaxThreadCountTimeout();
                 long mtc = getMaxThreadCount();
-                while (mtc > 0 && getUsedThreads() > mtc) {
+                if (mtc > 0 && getUsedThreads() > mtc) {
 
-                    /*
-                    "AT100[232] de.mhus.lib.jms.ServerJms$1" Id=232 in BLOCKED on lock=de....aaa.AccessApiImpl@48781daa
-                         owned by AT92[224] de.mhus.lib.jms.ServerJms$1 Id=224
-                         ...
-                        at de.mhus.lib.karaf.jms.JmsDataChannelImpl.receivedOneWay(JmsDataChannelImpl.java:209)
-                        at de.mhus.lib.karaf.jms.ChannelWrapper.receivedOneWay(ChannelWrapper.java:20)
-                        at de.mhus.lib.jms.ServerJms.processMessage(ServerJms.java:182)
-                        at de.mhus.lib.jms.ServerJms$1.run(ServerJms.java:120)
-                        at de.mhus.lib.core.MThread$ThreadContainer.run(MThread.java:192)
-
-                    do not block jms driven threads !!! This will cause a deadlock
-
-                    				 */
-                    for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
-                        if (element.getClassName().equals(ServerJms.class.getCanonicalName())) {
-                            log().w(
-                                            "Too many JMS Threads ... ignore, it's a 'JMS to JMS' call",
-                                            getUsedThreads());
-                            break;
+                    switch (overloadStrategy) {
+                        case WAIT: {
+                            
+                            long timeout = getMaxThreadCountTimeout();
+                            while (mtc > 0 && getUsedThreads() > mtc) {
+    
+                                /*
+                                "AT100[232] de.mhus.lib.jms.ServerJms$1" Id=232 in BLOCKED on lock=de....aaa.AccessApiImpl@48781daa
+                                     owned by AT92[224] de.mhus.lib.jms.ServerJms$1 Id=224
+                                     ...
+                                    at de.mhus.lib.karaf.jms.JmsDataChannelImpl.receivedOneWay(JmsDataChannelImpl.java:209)
+                                    at de.mhus.lib.karaf.jms.ChannelWrapper.receivedOneWay(ChannelWrapper.java:20)
+                                    at de.mhus.lib.jms.ServerJms.processMessage(ServerJms.java:182)
+                                    at de.mhus.lib.jms.ServerJms$1.run(ServerJms.java:120)
+                                    at de.mhus.lib.core.MThread$ThreadContainer.run(MThread.java:192)
+            
+                                do not block jms driven threads !!! This will cause a deadlock
+            
+                                				 */
+                                for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+                                    if (element.getClassName().equals(ServerJms.class.getCanonicalName())) {
+                                        log().d(
+                                                        "Overload: Too many JMS Threads ... ignore, it's a 'JMS to JMS' call",
+                                                        getUsedThreads());
+                                        break;
+                                    }
+                                }
+            
+                                log().d("Overload Too many JMS Threads ... waiting!", getUsedThreads());
+                                MThread.sleep(100);
+                                timeout -= 100;
+                                if (timeout < 0) {
+                                    log().w("Overload: timeout, drop", getUsedThreads());
+                                    return;
+                                }
+                            }
+                        } break;
+                        case DROP:
+                            log().w("Overload: drop JMS message");
+                            return;
+                        case JSON_ERROR: try {
+                            log().w("Overload: dorp and send error");
+                            TextMessage answer = createErrorAnswer("overload");
+                            log().d("errorAnswer", dest, answer);
+                            JmsContext context = new JmsContext(message, null);
+                            context.setAnswer(answer);
+                            sendAnswer(context);
+                        } catch(Throwable t) {
+                            log().e(t);
                         }
-                    }
-
-                    log().w("Too many JMS Threads ... wait!", getUsedThreads());
-                    MThread.sleep(100);
-                    timeout -= 100;
-                    if (timeout < 0) {
-                        log().w("Too many JMS Threads ... timeout", getUsedThreads());
-                        break;
+                        return;
+                        case QUEUE: 
+                            synchronized (this) {
+                                if (backlog == null)
+                                    backlog = new LinkedList<>();
+                                backlog.add(message);
+                            }
+                            log().d("Overload: queue message",backlog.size());
+                            return;
                     }
                 }
 
@@ -210,8 +246,26 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                             @Override
                             public void run() {
                                 try {
-                                    log().t("processMessage", message);
+                                    log().t("process message", message);
                                     processMessage(message);
+                                    
+                                    // check backlog
+                                    if (backlog != null) {
+                                        while (true) {
+                                            Message next = null;
+                                            synchronized (this) {
+                                                if (backlog.size() > 0)
+                                                    next = backlog.getFirst();
+                                            }
+                                            if (next == null) 
+                                                break;
+                                            
+                                            Aaa.subjectCleanup(); // to be secure
+                                            log().d("process queued message", next, backlog.size());
+                                            processMessage(next);
+                                        }
+                                    }
+                                    
                                 } finally {
                                     decrementUsedThreads();
                                     log().t("<<< usedThreads", getUsedThreads());
@@ -397,6 +451,12 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         return ret;
     }
 
+    protected TextMessage createErrorAnswer(String error) throws JMSException {
+        TextMessage ret = getSession().createTextMessage(null);
+        if (error != null) ret.setStringProperty("_error", error);
+        return ret;
+    }
+
     @Override
     public void doBeat() {
         if (isClosed()) return;
@@ -488,5 +548,13 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
 
     public long getLastActivity() {
         return lastActivity;
+    }
+
+    public STRATEGY getOverloadStrategy() {
+        return overloadStrategy;
+    }
+
+    public void setOverloadStrategy(STRATEGY overloadStrategy) {
+        this.overloadStrategy = overloadStrategy;
     }
 }
