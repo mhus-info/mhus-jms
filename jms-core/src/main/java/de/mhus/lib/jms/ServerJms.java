@@ -260,7 +260,6 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                                             if (next == null) 
                                                 break;
                                             
-                                            Aaa.subjectCleanup(); // to be secure
                                             log().d("process queued message", next, backlog.size());
                                             processMessage(next);
                                         }
@@ -332,6 +331,9 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
     public void processMessage(final Message message) {
         lastActivity = System.currentTimeMillis();
 
+        Aaa.subjectCleanup(); // to be secure
+        ITracer.get().cleanup();
+        
         Scope scope = null;
         try {
             if (message != null) {
