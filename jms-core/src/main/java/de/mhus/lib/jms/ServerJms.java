@@ -237,9 +237,6 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                     }
                 }
 
-                int nr = incrementUsedThreads();
-                log().t(">>> usedThreads", getUsedThreads());
-
                 Runnable job =
                         new Runnable() {
 
@@ -271,6 +268,9 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                                 }
                             }
                         };
+
+                int nr = incrementUsedThreads();
+                log().t(">>> usedThreads", getUsedThreads());
                 String jobName = JOB_PREFIX + nr + " " + getJmsDestination().getName();
                 if (CFG_THREAD_POOL.value()) new MThreadPool(job, jobName).start();
                 else new MThread(job, jobName).start();
@@ -332,8 +332,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         lastActivity = System.currentTimeMillis();
 
         Aaa.subjectCleanup(); // to be secure
-        ITracer.get().cleanup();
-        
+
         Scope scope = null;
         try {
             if (message != null) {
