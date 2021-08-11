@@ -41,10 +41,13 @@ import io.opentracing.tag.Tags;
 
 public class ClientJms extends JmsChannel implements MessageListener {
 
-    private static final CfgLong CFG_ANSWER_TIMEOUT = new CfgLong(MJms.class, "answerTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS * 5);
-    private static final CfgLong CFG_WARN_TIMEOUT = new CfgLong(MJms.class, "warnTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS);
-    private static final CfgLong CFG_BROADCAST_TIMEOUT = new CfgLong(MJms.class, "broadcastTimeout", 5000);
-    
+    private static final CfgLong CFG_ANSWER_TIMEOUT =
+            new CfgLong(MJms.class, "answerTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS * 5);
+    private static final CfgLong CFG_WARN_TIMEOUT =
+            new CfgLong(MJms.class, "warnTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS);
+    private static final CfgLong CFG_BROADCAST_TIMEOUT =
+            new CfgLong(MJms.class, "broadcastTimeout", 5000);
+
     private MessageProducer producer;
 
     private TemporaryQueue answerQueue;
@@ -93,16 +96,17 @@ public class ClientJms extends JmsChannel implements MessageListener {
                         .tracer()
                         .inject(
                                 ITracer.get().current().context(),
-                                Format.Builtin.TEXT_MAP, new TraceJmsMap(msg));
+                                Format.Builtin.TEXT_MAP,
+                                new TraceJmsMap(msg));
             }
         } catch (Throwable t) {
             log().d(t);
         }
         Subject subject = Aaa.getSubject();
         if (subject != null && subject.isAuthenticated()) {
-            String tokenStr = M.l(TrustApi.class).createToken("jms:" + getJmsDestination(), msg, subject);
-            if (tokenStr != null)
-                msg.setStringProperty(M.PARAM_AUTH_TOKEN, tokenStr);
+            String tokenStr =
+                    M.l(TrustApi.class).createToken("jms:" + getJmsDestination(), msg, subject);
+            if (tokenStr != null) msg.setStringProperty(M.PARAM_AUTH_TOKEN, tokenStr);
             msg.setStringProperty("_account", String.valueOf(subject.getPrincipal()));
         }
     }

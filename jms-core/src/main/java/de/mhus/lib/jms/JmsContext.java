@@ -59,5 +59,4 @@ public class JmsContext {
     public String getPrincipal() {
         return subject == null ? Aaa.USER_GUEST.value() : String.valueOf(subject.getPrincipal());
     }
-
 }

@@ -24,7 +24,8 @@ import de.mhus.lib.core.cfg.CfgLong;
 
 public abstract class JmsChannel extends JmsObject {
 
-    private static final CfgLong CFG_DEFAULT_TIMEOUT = new CfgLong(MJms.class, "msgTimeToLive", 60 * 60 * 1000);
+    private static final CfgLong CFG_DEFAULT_TIMEOUT =
+            new CfgLong(MJms.class, "msgTimeToLive", 60 * 60 * 1000);
     protected JmsDestination dest;
     protected int deliveryMode = DeliveryMode.NON_PERSISTENT;
     protected int priority = 0; // default

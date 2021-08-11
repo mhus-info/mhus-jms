@@ -49,7 +49,8 @@ import de.mhus.lib.errors.MException;
 
 public class MJms {
     private static final Log log = Log.getLog(MJms.class);
-    private static final CfgString CFG_DEFAULT_CONNECTION = new CfgString(MJms.class, "defaultConnection", "default");
+    private static final CfgString CFG_DEFAULT_CONNECTION =
+            new CfgString(MJms.class, "defaultConnection", "default");
 
     public static void setProperties(IProperties prop, Message msg) throws JMSException {
         setProperties("", prop, msg);
@@ -196,33 +197,29 @@ public class MJms {
     public static String getDefaultConnectionName() {
         return CFG_DEFAULT_CONNECTION.value();
     }
-    
-    public static Message toMessage(JmsObject jms,Object in) throws JMSException {
-        
+
+    public static Message toMessage(JmsObject jms, Object in) throws JMSException {
+
         Message ret = null;
         if (in == null) {
             ret = jms.createTextMessage(null);
             ret.setStringProperty("_encoding", "empty");
-        } else
-        if (in instanceof MapValue) {
+        } else if (in instanceof MapValue) {
             ret = jms.createMapMessage();
             ret.setStringProperty("_encoding", "map");
-            MJms.setMapProperties((Map<?, ?>)((MapValue)in).getValue(), (MapMessage)ret);
-        } else
-        if (in instanceof byte[]) {
+            MJms.setMapProperties((Map<?, ?>) ((MapValue) in).getValue(), (MapMessage) ret);
+        } else if (in instanceof byte[]) {
             ret = jms.createBytesMessage();
             ret.setStringProperty("_encoding", "byte[]");
-            ((BytesMessage)ret).writeBytes((byte[])in);
-        } else
-        if (in instanceof String) {
+            ((BytesMessage) ret).writeBytes((byte[]) in);
+        } else if (in instanceof String) {
             ret = jms.createTextMessage();
             ret.setStringProperty("_encoding", "text");
-            ((TextMessage)ret).setText((String)in);
-        } else
-        if (in instanceof InputStream) {
+            ((TextMessage) ret).setText((String) in);
+        } else if (in instanceof InputStream) {
             ret = jms.createBytesMessage();
             ret.setStringProperty("_encoding", "byte[]");
-            InputStream is = (InputStream)in;
+            InputStream is = (InputStream) in;
             long free = Runtime.getRuntime().freeMemory();
             if (free < 1024) free = 1024;
             if (free > 32768) free = 32768;
@@ -232,50 +229,49 @@ public class MJms {
                 while ((i = is.read(buffer)) != -1) {
                     if (i == 0) MThread.sleep(100);
                     else {
-                        ((BytesMessage)ret).writeBytes(buffer, 0, i);
+                        ((BytesMessage) ret).writeBytes(buffer, 0, i);
                     }
                 }
             } catch (Exception e) {
                 log.d(e);
                 throw new JMSException(e.toString());
             }
-        } else
-        if ((in instanceof INode) && !((INode)in).isProperties() ) {
+        } else if ((in instanceof INode) && !((INode) in).isProperties()) {
             ret = jms.createTextMessage();
             ret.setStringProperty("_encoding", "json");
             try {
-                String val = INode.toPrettyJsonString( (INode)in );
-                ((TextMessage)ret).setText( val );
+                String val = INode.toPrettyJsonString((INode) in);
+                ((TextMessage) ret).setText(val);
             } catch (MException e) {
                 log.d(e);
                 throw new JMSException(e.toString());
             }
-        } else
-        if (in instanceof IProperties) {
+        } else if (in instanceof IProperties) {
             ret = jms.createMapMessage();
             ret.setStringProperty("_encoding", "properties");
-            MJms.setMapProperties( (IProperties)in, (MapMessage)ret);
-        } else
-        if (in instanceof Map) {
+            MJms.setMapProperties((IProperties) in, (MapMessage) ret);
+        } else if (in instanceof Map) {
             boolean primitive = true;
-            for (Object value : ((Map<?,?>)in).values())
-                if (value != null && !value.getClass().isPrimitive() && !(value instanceof String)) {
+            for (Object value : ((Map<?, ?>) in).values())
+                if (value != null
+                        && !value.getClass().isPrimitive()
+                        && !(value instanceof String)) {
                     primitive = false;
                     break;
                 }
             if (primitive) {
                 ret = jms.createMapMessage();
                 ret.setStringProperty("_encoding", "map");
-                MJms.setMapProperties( (Map<?,?>)in, (MapMessage)ret);
+                MJms.setMapProperties((Map<?, ?>) in, (MapMessage) ret);
             } else {
                 MNode cfg = new MNode();
-                cfg.putMapToNode((Map<?,?>)in);
+                cfg.putMapToNode((Map<?, ?>) in);
 
                 ret = jms.createTextMessage();
                 ret.setStringProperty("_encoding", "json");
                 try {
-                    String val = INode.toPrettyJsonString( cfg );
-                    ((TextMessage)ret).setText( val );
+                    String val = INode.toPrettyJsonString(cfg);
+                    ((TextMessage) ret).setText(val);
                 } catch (MException e) {
                     log.d(e);
                     throw new JMSException(e.toString());
@@ -287,7 +283,7 @@ public class MJms {
             try {
                 ObjectNode json = MJson.createObjectNode();
                 MPojo.pojoToJson(in, json);
-                ((TextMessage)ret).setText(MJson.toPrettyString(json));
+                ((TextMessage) ret).setText(MJson.toPrettyString(json));
             } catch (IOException e) {
                 log.d(e);
                 throw new JMSException(e.getMessage());
@@ -299,59 +295,48 @@ public class MJms {
     }
 
     public static Object toObject(Message msg) throws JMSException {
-        if (msg == null)
-            throw new NullPointerException("msg is null");
+        if (msg == null) throw new NullPointerException("msg is null");
         if (msg instanceof MapMessage) {
-            MapMessage mapMsg = (MapMessage)msg;
+            MapMessage mapMsg = (MapMessage) msg;
             return MJms.getMapProperties(mapMsg);
-        } else
-        if (msg instanceof TextMessage) {
-            return ((TextMessage)msg).getText();
-        } else
-        if (msg instanceof BytesMessage) {
-            long len = ((BytesMessage)msg).getBodyLength();
+        } else if (msg instanceof TextMessage) {
+            return ((TextMessage) msg).getText();
+        } else if (msg instanceof BytesMessage) {
+            long len = ((BytesMessage) msg).getBodyLength();
             byte[] bytes = new byte[(int) len];
-            ((BytesMessage)msg).readBytes(bytes);
+            ((BytesMessage) msg).readBytes(bytes);
             return bytes;
-        } else
-        if (msg instanceof ObjectMessage) {
-            return ((ObjectMessage)msg).getObject();
+        } else if (msg instanceof ObjectMessage) {
+            return ((ObjectMessage) msg).getObject();
         }
         throw new JMSException("Unknown message type: " + msg.getClass().getCanonicalName());
     }
 
     public static INode toNode(Message msg) throws JMSException {
-        if (msg == null)
-            throw new NullPointerException("msg is null");
+        if (msg == null) throw new NullPointerException("msg is null");
         if (msg instanceof MapMessage) {
-            MapMessage mapMsg = (MapMessage)msg;
+            MapMessage mapMsg = (MapMessage) msg;
             return MJms.getMapConfig(mapMsg);
-        } else
-        if (msg instanceof TextMessage) {
+        } else if (msg instanceof TextMessage) {
             try {
-                return INode.readNodeFromString(
-                        ((TextMessage)msg).getText() 
-                        );
+                return INode.readNodeFromString(((TextMessage) msg).getText());
             } catch (MException e) {
                 log.d(e);
                 throw new JMSException(e.toString());
             }
-        } else
-        if (msg instanceof BytesMessage) {
-            long len = ((BytesMessage)msg).getBodyLength();
+        } else if (msg instanceof BytesMessage) {
+            long len = ((BytesMessage) msg).getBodyLength();
             byte[] bytes = new byte[(int) len];
-            ((BytesMessage)msg).readBytes(bytes);
+            ((BytesMessage) msg).readBytes(bytes);
             MNode ret = new MNode();
             ret.put(INode.NAMELESS_VALUE, bytes);
             return ret;
-        } else
-        if (msg instanceof ObjectMessage) {
-            Serializable obj = ((ObjectMessage)msg).getObject();
+        } else if (msg instanceof ObjectMessage) {
+            Serializable obj = ((ObjectMessage) msg).getObject();
             MNode ret = new MNode();
             ret.put(INode.NAMELESS_VALUE, obj);
             return ret;
         }
         throw new JMSException("Unknown message type: " + msg.getClass().getCanonicalName());
     }
-    
 }
