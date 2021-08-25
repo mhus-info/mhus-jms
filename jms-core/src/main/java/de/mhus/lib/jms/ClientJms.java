@@ -113,7 +113,13 @@ public class ClientJms extends JmsChannel implements MessageListener {
 
     public Message sendJms(Message msg) throws JMSException {
         try (Scope scope =
-                ITracer.get().enter("jmscall " + getName() + "/" + msg.getStringProperty("path"), "name", getName(), "dest", dest.toString())) {
+                ITracer.get()
+                        .enter(
+                                "jmscall " + getName() + "/" + msg.getStringProperty("path"),
+                                "name",
+                                getName(),
+                                "dest",
+                                dest.toString())) {
             open();
 
             JmsContext context = new JmsContext(msg, Aaa.getSubject());
