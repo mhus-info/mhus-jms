@@ -41,6 +41,7 @@ import de.mhus.lib.core.cfg.CfgLong;
 import de.mhus.lib.core.cfg.CfgString;
 import de.mhus.lib.core.logging.ITracer;
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
 import io.opentracing.tag.Tags;
@@ -356,16 +357,16 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                     if (parentSpanCtx == null) {
                         scope = ITracer.get().start(getName(), CFG_TRACE_ACTIVE.value());
                     } else if (parentSpanCtx != null) {
-                        scope =
-                                ITracer.get()
-                                        .tracer()
-                                        .buildSpan(getName())
-                                        .asChildOf(parentSpanCtx)
-                                        .startActive(true);
+                        Span span = ITracer.get()
+                                .tracer()
+                                .buildSpan(getName())
+                                .asChildOf(parentSpanCtx)
+                                .start();
+                        scope = ITracer.get().tracer().scopeManager().activate(span);
                     }
 
                     if (scope != null) {
-                        Tags.SPAN_KIND.set(scope.span(), Tags.SPAN_KIND_SERVER);
+                        Tags.SPAN_KIND.set(ITracer.get().current(), Tags.SPAN_KIND_SERVER);
                     }
 
                 } catch (Throwable t) {
