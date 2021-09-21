@@ -343,7 +343,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
     public void processMessage(final Message message) {
         lastActivity = System.currentTimeMillis();
 
-        Aaa.subjectCleanup(); // to be secure
+        MThread.cleanup();
 
         Scope scope = null;
         try {
@@ -362,7 +362,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                                 .buildSpan(getName())
                                 .asChildOf(parentSpanCtx)
                                 .start();
-                        scope = ITracer.get().tracer().scopeManager().activate(span);
+                        scope = ITracer.get().activate(span);
                     }
 
                     if (scope != null) {
