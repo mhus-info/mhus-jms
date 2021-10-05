@@ -357,11 +357,12 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
                     if (parentSpanCtx == null) {
                         scope = ITracer.get().start(getName(), CFG_TRACE_ACTIVE.value());
                     } else if (parentSpanCtx != null) {
-                        Span span = ITracer.get()
-                                .tracer()
-                                .buildSpan(getName())
-                                .asChildOf(parentSpanCtx)
-                                .start();
+                        Span span =
+                                ITracer.get()
+                                        .tracer()
+                                        .buildSpan(getName())
+                                        .asChildOf(parentSpanCtx)
+                                        .start();
                         scope = ITracer.get().activate(span);
                     }
 
