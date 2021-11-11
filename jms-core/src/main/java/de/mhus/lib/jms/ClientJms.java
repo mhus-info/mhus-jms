@@ -169,7 +169,8 @@ public class ClientJms extends JmsChannel implements MessageListener {
                     }
 
                     long delta = System.currentTimeMillis() - start;
-                    if (delta > warnTimeout) log().w("long time waiting", dest, delta, ITracer.get().getCurrentId());
+                    if (delta > warnTimeout)
+                        log().w("long time waiting", dest, delta, ITracer.get().getCurrentId());
 
                     if (delta > timeout) {
                         log().w("timeout", delta, ITracer.get().getCurrentId());
