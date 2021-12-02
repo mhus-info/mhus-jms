@@ -65,7 +65,7 @@ public class ClientJsonProxy<T> extends ClientJsonObject implements JmsObjectPro
             }
 
             if (fDesc.isOneWay() || dest.isTopic() && fDesc.getReturnType() == Void.class) {
-                MProperties prop = new MProperties("function", name);
+                MProperties prop = IProperties.to("function", name);
                 try {
                     sendObjectOneWay(prop, args);
                 } catch (Exception e) {
@@ -76,7 +76,7 @@ public class ClientJsonProxy<T> extends ClientJsonObject implements JmsObjectPro
                                     e);
                 }
             } else if (dest.isTopic() && fDesc.getReturnType() == List.class) {
-                MProperties prop = new MProperties("function", name);
+                MProperties prop = IProperties.to("function", name);
                 try {
                     RequestResult<Object>[] answers = sendObjectBroadcast(prop, args);
 
@@ -99,7 +99,7 @@ public class ClientJsonProxy<T> extends ClientJsonObject implements JmsObjectPro
                 }
 
             } else {
-                MProperties prop = new MProperties("function", name);
+                MProperties prop = IProperties.to("function", name);
                 try {
                     RequestResult<Object> res = sendObject(prop, args);
                     // check success and throw exceptions
