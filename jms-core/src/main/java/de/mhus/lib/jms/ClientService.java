@@ -34,6 +34,7 @@ import javax.jms.TextMessage;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.mhus.lib.basics.RC;
 import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MJson;
 import de.mhus.lib.errors.MRuntimeException;
@@ -88,7 +89,7 @@ public class ClientService<T> extends ClientJms {
             FunctionDescriptor fDesc = desc.getFunction(name);
             if (fDesc == null) {
                 //				log().w("function not found", name);
-                throw new MRuntimeException("function not found", name);
+                throw new MRuntimeException(RC.NOT_SUPPORTED, "function {1} not found", name);
             }
 
             Message msg = null;
@@ -145,8 +146,8 @@ public class ClientService<T> extends ClientJms {
                     res = sendJms(msg);
                     // check success and throw exceptions
                     if (res == null)
-                        throw new MRuntimeException(
-                                "internal error: result is null",
+                        throw new MRuntimeException(RC.ERROR,
+                                "result is null",
                                 desc.getInterface().getCanonicalName(),
                                 method.getName());
                 } catch (Exception e) {

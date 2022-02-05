@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
+import de.mhus.lib.basics.RC;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.errors.MRuntimeException;
 import io.opentracing.propagation.TextMap;
@@ -60,7 +61,7 @@ public class TraceJmsMap extends MLog implements TextMap {
                             try {
                                 return message.getStringProperty(key);
                             } catch (JMSException e) {
-                                throw new MRuntimeException(key, e);
+                                throw new MRuntimeException(RC.STATUS.ERROR, key, e);
                             }
                         }
 
@@ -72,7 +73,7 @@ public class TraceJmsMap extends MLog implements TextMap {
                 }
             };
         } catch (JMSException e) {
-            throw new MRuntimeException(e);
+            throw new MRuntimeException(RC.STATUS.ERROR, e);
         }
     }
 

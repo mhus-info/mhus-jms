@@ -22,6 +22,7 @@ import java.lang.reflect.Proxy;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.mhus.lib.basics.RC;
 import de.mhus.lib.core.IProperties;
 import de.mhus.lib.core.MProperties;
 import de.mhus.lib.errors.MRuntimeException;
@@ -61,7 +62,7 @@ public class ClientJsonProxy<T> extends ClientJsonObject implements JmsObjectPro
             FunctionDescriptor fDesc = desc.getFunction(name);
             if (fDesc == null) {
                 //				log().w("function not found", name);
-                throw new MRuntimeException("function not found", name);
+                throw new MRuntimeException(RC.NOT_SUPPORTED, "function {1} not found", name);
             }
 
             if (fDesc.isOneWay() || dest.isTopic() && fDesc.getReturnType() == Void.class) {
@@ -104,8 +105,8 @@ public class ClientJsonProxy<T> extends ClientJsonObject implements JmsObjectPro
                     RequestResult<Object> res = sendObject(prop, args);
                     // check success and throw exceptions
                     if (res == null)
-                        throw new MRuntimeException(
-                                "internal error: result is null",
+                        throw new MRuntimeException(RC.ERROR,
+                                "error: result is null",
                                 desc.getInterface().getCanonicalName(),
                                 method.getName());
 
