@@ -37,7 +37,7 @@ public class InterceptorChain extends MLog implements JmsInterceptor {
                 try {
                     inter.begin(callContext);
                 } catch (Throwable t) {
-                    log().w(inter, t);
+                    log().w("begin failed", inter, t);
                 }
             }
         }
@@ -53,7 +53,7 @@ public class InterceptorChain extends MLog implements JmsInterceptor {
                 try {
                     inter.end(callContext);
                 } catch (Throwable t) {
-                    log().w(inter, t);
+                    log().w("end failed", inter, t);
                 }
             }
         }
@@ -68,7 +68,7 @@ public class InterceptorChain extends MLog implements JmsInterceptor {
                 try {
                     inter.prepare(context);
                 } catch (Throwable t) {
-                    log().w(inter, t);
+                    log().w("prepare failed", inter, t);
                 }
             }
         }
@@ -83,7 +83,7 @@ public class InterceptorChain extends MLog implements JmsInterceptor {
                 try {
                     inter.answer(context);
                 } catch (Throwable t) {
-                    log().w(inter, t);
+                    log().w("answer failed", inter, t);
                 }
             }
         }

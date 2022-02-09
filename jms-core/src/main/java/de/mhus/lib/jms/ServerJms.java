@@ -154,7 +154,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
         try {
             answer.setStringProperty("_principal", rpcContext.getPrincipal());
         } catch (Throwable e) {
-            log().t(getClass(), e);
+            log().t("set principal failed", getClass(), e);
         }
         try {
             if (ITracer.get().current() != null) {

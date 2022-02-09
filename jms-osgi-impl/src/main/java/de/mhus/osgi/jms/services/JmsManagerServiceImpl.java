@@ -265,7 +265,7 @@ public class JmsManagerServiceImpl extends MLog implements JmsManagerService {
                 if (service != null) addChannel(service);
                 return service;
             } catch (Throwable t) {
-                log().e(reference, t);
+                log().e("add serice failed", reference, t);
                 return null;
             }
         }
@@ -339,7 +339,7 @@ public class JmsManagerServiceImpl extends MLog implements JmsManagerService {
                 try {
                     c.doBeat();
                 } catch (Throwable t) {
-                    log().d(c, t);
+                    log().d("channel beat failed", c, t);
                 }
         }
     }
