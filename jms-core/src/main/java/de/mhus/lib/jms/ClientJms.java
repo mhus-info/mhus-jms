@@ -42,9 +42,9 @@ import io.opentracing.tag.Tags;
 public class ClientJms extends JmsChannel implements MessageListener {
 
     private static final CfgLong CFG_ANSWER_TIMEOUT =
-            new CfgLong(MJms.class, "answerTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS * 5);
+            new CfgLong(MJms.class, "answerTimeout", MPeriod.MINUTE_IN_MILLISECONDS * 5);
     private static final CfgLong CFG_WARN_TIMEOUT =
-            new CfgLong(MJms.class, "warnTimeout", MPeriod.MINUTE_IN_MILLISECOUNDS);
+            new CfgLong(MJms.class, "warnTimeout", MPeriod.MINUTE_IN_MILLISECONDS);
     private static final CfgLong CFG_BROADCAST_TIMEOUT =
             new CfgLong(MJms.class, "broadcastTimeout", 5000);
 

@@ -62,7 +62,7 @@ public abstract class ServerJms extends JmsChannel implements MessageListener {
     private static CfgLong maxThreadCountTimeout =
             new CfgLong(ServerJms.class, "maxThreadCountTimeout", 10000);
     private static CfgLong inactivityTimeout =
-            new CfgLong(ServerJms.class, "inactivityTimeout", MPeriod.HOUR_IN_MILLISECOUNDS);
+            new CfgLong(ServerJms.class, "inactivityTimeout", MPeriod.HOUR_IN_MILLISECONDS);
 
     private static CfgString CFG_TRACE_ACTIVE =
             new CfgString(ServerJms.class, "traceActivation", "");
