@@ -16,6 +16,7 @@
 package de.mhus.lib.core.jms.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -26,9 +27,12 @@ import org.junit.jupiter.api.Test;
 import de.mhus.lib.core.MApi;
 import de.mhus.lib.core.MThread;
 import de.mhus.lib.core.logging.Log.LEVEL;
+import de.mhus.lib.core.node.MNode;
+import de.mhus.lib.core.operation.util.SuccessfulMap;
 import de.mhus.lib.core.util.Value;
 import de.mhus.lib.jms.ClientJms;
 import de.mhus.lib.jms.JmsConnection;
+import de.mhus.lib.jms.MJms;
 import de.mhus.lib.jms.ServerJms;
 import de.mhus.lib.tests.TestCase;
 
@@ -88,4 +92,33 @@ public class JmsTest extends TestCase {
         client.close();
         server.close();
     }
+    
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testSerializationMap() throws JMSException {
+        
+        JmsConnection con1 =
+                new JmsConnection("vm://localhost?broker.persistent=false", "admin", "password");
+        ClientJms client = new ClientJms(con1.createQueue("test"));
+
+        SuccessfulMap msg = new SuccessfulMap("path","msg",200);
+        msg.put("test", new MNode("parent"));
+        
+        
+        Message ret = MJms.toMessage(client, msg.getResult());
+        assertTrue(ret instanceof TextMessage);
+        
+        TextMessage txtMsg = (TextMessage)ret;
+        String txt = txtMsg.getText();
+        
+        System.out.println(txt);
+
+        assertEquals("{\n"
+                + "  \"test\" : { }\n"
+                + "}", txt);
+        
+        client.close();
+        con1.close();
+    }
+    
 }
