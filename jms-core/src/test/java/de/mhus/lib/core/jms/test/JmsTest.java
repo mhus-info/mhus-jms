@@ -101,7 +101,7 @@ public class JmsTest extends TestCase {
                 new JmsConnection("vm://localhost?broker.persistent=false", "admin", "password");
         ClientJms client = new ClientJms(con1.createQueue("test"));
 
-        SuccessfulMap msg = new SuccessfulMap("path","msg",200);
+        SuccessfulMap msg = new SuccessfulMap("path",200,"msg");
         msg.put("test", new MNode("parent"));
         
         
