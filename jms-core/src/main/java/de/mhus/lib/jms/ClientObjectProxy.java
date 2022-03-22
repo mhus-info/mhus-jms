@@ -146,7 +146,8 @@ public class ClientObjectProxy<T> extends ClientJms implements JmsObjectProxy {
                     res = sendJms(msg);
                     // check success and throw exceptions
                     if (res == null)
-                        throw new MRuntimeException(RC.ERROR,
+                        throw new MRuntimeException(
+                                RC.ERROR,
                                 "result is null",
                                 desc.getInterface().getCanonicalName(),
                                 method.getName());

@@ -93,35 +93,33 @@ public class JmsTest extends TestCase {
         client.close();
         server.close();
     }
-    
+
     @SuppressWarnings("deprecation")
     @Test
     public void testSerializationMap() throws JMSException {
-        
+
         JmsConnection con1 =
                 new JmsConnection("vm://localhost?broker.persistent=false", "admin", "password");
         ClientJms client = new ClientJms(con1.createQueue("test"));
 
-        SuccessfulMap msg = new SuccessfulMap("path",200,"msg");
+        SuccessfulMap msg = new SuccessfulMap("path", 200, "msg");
         msg.put("test", new MNode("parent"));
-        
-        
+
         Message ret = MJms.toMessage(client, msg.getResult());
-      assertTrue(ret instanceof MapMessage);
-      System.out.println(ret);
-//        assertTrue(ret instanceof TextMessage);
-        
-//        TextMessage txtMsg = (TextMessage)ret;
-//        String txt = txtMsg.getText();
-        
-//        System.out.println(txt);
-//
-//        assertEquals("{\n"
-//                + "  \"test\" : { }\n"
-//                + "}", txt);
-        
+        assertTrue(ret instanceof MapMessage);
+        System.out.println(ret);
+        //        assertTrue(ret instanceof TextMessage);
+
+        //        TextMessage txtMsg = (TextMessage)ret;
+        //        String txt = txtMsg.getText();
+
+        //        System.out.println(txt);
+        //
+        //        assertEquals("{\n"
+        //                + "  \"test\" : { }\n"
+        //                + "}", txt);
+
         client.close();
         con1.close();
     }
-    
 }

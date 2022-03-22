@@ -105,7 +105,8 @@ public class ClientJsonProxy<T> extends ClientJsonObject implements JmsObjectPro
                     RequestResult<Object> res = sendObject(prop, args);
                     // check success and throw exceptions
                     if (res == null)
-                        throw new MRuntimeException(RC.ERROR,
+                        throw new MRuntimeException(
+                                RC.ERROR,
                                 "error: result is null",
                                 desc.getInterface().getCanonicalName(),
                                 method.getName());
