@@ -106,19 +106,13 @@ public class JmsTest extends TestCase {
         msg.put("test", new MNode("parent"));
 
         Message ret = MJms.toMessage(client, msg.getResult());
-        assertTrue(ret instanceof MapMessage);
         System.out.println(ret);
-        //        assertTrue(ret instanceof TextMessage);
-
-        //        TextMessage txtMsg = (TextMessage)ret;
-        //        String txt = txtMsg.getText();
-
-        //        System.out.println(txt);
-        //
-        //        assertEquals("{\n"
-        //                + "  \"test\" : { }\n"
-        //                + "}", txt);
-
+        assertTrue(ret instanceof TextMessage);
+        String txt = ((TextMessage)ret).getText();
+        System.out.println(txt);
+        assertEquals("{\n"
+                + "  \"test\" : { }\n"
+                + "}", txt);
         client.close();
         con1.close();
     }
